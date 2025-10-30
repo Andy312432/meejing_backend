@@ -1,4 +1,5 @@
 # 覓境 API Backend
+## **Warning: Under development!! Some apis are untested!!**
 
 Backend implementation for **覓境｜Map-based 日誌社群平台**, built with Django 5 + Django REST Framework.  
 It delivers the MVP feature set for personal journals, social discovery, and geo-based exploration with a SwiftUI-friendly REST API surface.
@@ -83,6 +84,25 @@ Base path: `/api/`
 - Journal API workflows (location creation, tag assignment, privacy filtering)  
 - Social interactions (follow gating, likes, comments, collections)  
 - Search endpoint coverage
+
+## Deploying to Vercel
+
+This repository ships with a `vercel.json` and an `api/index.py` WSGI entrypoint so the Django app can run on Vercel's Python runtime.
+
+1. **Install the Vercel CLI** (optional for local previews): `npm i -g vercel`.
+2. **Set required environment variables** in the Vercel dashboard (`Project Settings → Environment Variables`):
+   - `DEBUG=False`
+   - `SECRET_KEY=<strong-random-string>`
+   - `ALLOWED_HOSTS=.vercel.app,<your-custom-domain>`
+   - `DATABASE_URL=<external-postgres-connection-string>`
+   - `CORS_ALLOWED_ORIGINS=https://<your-frontend-domain>`
+   - `CSRF_TRUSTED_ORIGINS=https://<your-frontend-domain>,https://*.vercel.app`
+3. **Provision a managed database** (e.g. Neon, Supabase, Railway) and point `DATABASE_URL` at it—Vercel's storage is ephemeral.
+4. (Optional) **Configure media storage** (S3, Cloudflare R2, etc.) and update `MEDIA_URL`/`MEDIA_ROOT` or storage backends accordingly.
+5. Deploy with `vercel --prod` or through the Vercel dashboard. The build command runs `collectstatic` so hashed assets are served from `/staticfiles`.
+6. After the first deploy, run migrations via `vercel ssh` or a CI step: `python manage.py migrate`.
+
+> Note: The `routes` section in `vercel.json` serves collected static assets. User-uploaded media should live on external storage in production.
 
 ## Next Steps (Roadmap Ideas)
 
