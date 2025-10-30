@@ -17,7 +17,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/api/index.py"
+      "dest": "/meejing_api/wsgi.py"
     }
   ]
 }
