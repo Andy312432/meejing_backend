@@ -29,12 +29,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             "username",
             "email",
             "display_name",
-            "bio",
             "avatar",
-            "location_name",
-            "latitude",
-            "longitude",
-            "website",
             "profile_visibility",
         ]
         read_only_fields = ["id", "uuid", "username", "email"]
