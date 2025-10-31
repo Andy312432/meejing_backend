@@ -87,8 +87,6 @@ Base path: `/api/`
 
 ## Deploying to Vercel
 
-This repository ships with a `vercel.json` and an `api/index.py` WSGI entrypoint so the Django app can run on Vercel's Python runtime.
-
 1. **Install the Vercel CLI** (optional for local previews): `npm i -g vercel`.
 2. **Set required environment variables** in the Vercel dashboard (`Project Settings → Environment Variables`):
    - `DEBUG=False`
@@ -97,7 +95,7 @@ This repository ships with a `vercel.json` and an `api/index.py` WSGI entrypoint
    - `DATABASE_URL=<external-postgres-connection-string>`
    - `CORS_ALLOWED_ORIGINS=https://<your-frontend-domain>`
    - `CSRF_TRUSTED_ORIGINS=https://<your-frontend-domain>,https://*.vercel.app`
-3. **Provision a managed database** (e.g. Neon, Supabase, Railway) and point `DATABASE_URL` at it—Vercel's storage is ephemeral.
+3. **Provision a managed database** (e.g. Neon) and point `DATABASE_URL` at it—Vercel's storage is ephemeral.
 4. (Optional) **Configure media storage** (S3, Cloudflare R2, etc.) and update `MEDIA_URL`/`MEDIA_ROOT` or storage backends accordingly.
 5. Deploy with `vercel --prod` or through the Vercel dashboard. The build command runs `collectstatic` so hashed assets are served from `/staticfiles`.
 6. After the first deploy, run migrations via `vercel ssh` or a CI step: `python manage.py migrate`.
