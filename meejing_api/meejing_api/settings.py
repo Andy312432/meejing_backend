@@ -47,8 +47,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "core",
     "accounts",
-    "journals",
-    "social",
+    "map",
 ]
 
 MIDDLEWARE = [

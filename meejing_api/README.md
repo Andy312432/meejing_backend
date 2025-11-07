@@ -6,11 +6,11 @@ It delivers the MVP feature set for personal journals, social discovery, and geo
 
 ## Key Features
 
-- **Accounts**: JWT authentication (SimpleJWT), profile management, visibility controls (private / friends / public).  
-- **Journal Entries**: Map-first content with locations, tags, media placeholders, privacy, and publishing workflow.  
-- **Locations & Tags**: User-curated places with search/filter support; reusable thematic tags.  
-- **Social Layer**: Follow system, likes, comments (with soft-delete), favorites/collections, and engagement counters.  
-- **Search**: Unified `/api/search/` endpoint returning entries, locations, and tags.  
+- **Accounts**: JWT authentication (SimpleJWT) plus profile visibility controls (private / friends / public).  
+- **Map Places**: CRUD endpoints for geo-tagged places with per-place permissions.  
+- **Place Posts**: Lightweight stories tied to places with simple visibility rules.  
+- **Map API**: Dedicated endpoints for listing public places, fetching posts per place or user, editing/deleting places and posts.  
+- **Search**: Unified `/api/search/` endpoint returning places and posts.  
 - **OpenAPI Schema**: Auto-generated via drf-spectacular (`api-schema.yaml`) with Swagger UI at `/api/docs/`.
 
 ## Tech Stack
@@ -50,30 +50,22 @@ Base path: `/api/`
 - `GET /users/` – public directory with search & filters  
 - `GET /users/{id}/stats/` – quick metrics per user
 
-### Journals (`/api/journals/…`)
-- `locations/` – CRUD for user-curated places  
-- `tags/` – manage/list journal tags  
-- `entries/` – journal CRUD with filters, search, pagination  
-  - `entries/mine/` – include drafts and private content for owner  
-  - `entries/map/` – lightweight payload for map plotting  
-  - `entries/summary/` – feed-friendly summaries  
-  - `entries/{id}/publish/` – publish draft
-
-### Social (`/api/social/…`)
-- `follows/` – list followings, `POST` follow, `DELETE` by follow ID or `/to/{user_id}/`  
-- `likes/` – `POST` like, `DELETE` by entry ID, `GET` liked entries  
-- `comments/` – threaded comments with soft-delete by author/entry owner  
-- `collections/` – favorites & custom collections, nested `entries/` add/remove/list  
-- `collections/favorites/` – ensure + fetch default “Favorites” collection
+### Map (`/api/map/…`)
+- `places/` – CRUD for places; `GET /places/public/` lists all public locations  
+- `places/{id}/` – edit or delete a place (owner only)  
+- `posts/` – CRUD for posts tied to places (`place_id` payload key)  
+  - `GET /posts/by-place/<place_uuid>/` – posts for a place  
+  - `GET /posts/by-user/<user_uuid>/` – posts written by a user  
+  - `DELETE /posts/{id}/` – remove a post (author only)
 
 ### Global Search
-- `GET /api/search/?q=espresso` – returns entries, locations, tags matching the query (≥2 chars) respecting visibility rules
+- `GET /api/search/?q=espresso` – returns places and posts matching the query (≥2 chars) with visibility filtering
 
 ## Data Model Highlights
 
-- `accounts.User` (customized `AbstractUser`) extends profile metadata and home base coordinates.  
-- `journals.Location`, `JournalEntry`, `JournalTag`, `JournalMedia` cover geo stories with UUIDs & engagement counters.  
-- `social.Follow`, `Like`, `Comment`, `Collection`, `CollectionEntry` layer social interactions with signal-driven stats refresh.  
+- `accounts.User` (customized `AbstractUser`) stores display names, avatars, and visibility preferences.  
+- `map.Place` encapsulates geo coordinates, metadata, creator ownership, and visibility.  
+- `map.Post` links user-authored stories to places with matching visibility rules.  
 - Visibility (`private`, `friends`, `public`) centralized in `core.models.VisibilityChoices` and enforced across queries/permissions.
 
 ## Tests
@@ -81,8 +73,7 @@ Base path: `/api/`
 `manage.py test` currently exercises:
 
 - User model basics  
-- Journal API workflows (location creation, tag assignment, privacy filtering)  
-- Social interactions (follow gating, likes, comments, collections)  
+- Map API workflows (places/posts CRUD, restricted actions, public listings)  
 - Search endpoint coverage
 
 ## Deploying to Vercel

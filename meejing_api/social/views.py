@@ -3,12 +3,15 @@ from __future__ import annotations
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    extend_schema,
+    extend_schema_view,
+)
 from rest_framework import mixins, permissions, response, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter, SearchFilter
 
-from accounts.serializers import UserPublicSerializer
 from journals.models import JournalEntry
 from journals.serializers import JournalEntrySummarySerializer
 from social.services import ensure_default_collection
@@ -23,6 +26,23 @@ from .serializers import (
 )
 
 
+@extend_schema_view(
+    list=extend_schema(
+        tags=["Social"],
+        summary="List users the current user follows",
+        responses=FollowSerializer(many=True),
+    ),
+    create=extend_schema(
+        tags=["Social"],
+        summary="Follow a user",
+        responses=FollowSerializer,
+    ),
+    destroy=extend_schema(
+        tags=["Social"],
+        summary="Unfollow by follow relationship ID",
+        responses={204: None},
+    ),
+)
 class FollowViewSet(mixins.CreateModelMixin, mixins.DestroyModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
     """Handle follow/unfollow interactions."""
 
@@ -51,6 +71,11 @@ class FollowViewSet(mixins.CreateModelMixin, mixins.DestroyModelMixin, mixins.Li
         follow.delete()
         return response.Response(status=status.HTTP_204_NO_CONTENT)
 
+    @extend_schema(
+        tags=["Social"],
+        summary="List users following the current user",
+        responses=FollowSerializer(many=True),
+    )
     @action(detail=False, methods=["get"], url_path="followers")
     def followers(self, request, *args, **kwargs):
         qs = Follow.objects.select_related("follower").filter(
@@ -61,6 +86,7 @@ class FollowViewSet(mixins.CreateModelMixin, mixins.DestroyModelMixin, mixins.Li
         return response.Response(serializer.data)
 
     @extend_schema(
+        tags=["Social"],
         parameters=[
             OpenApiParameter(
                 "user_id",
@@ -82,6 +108,23 @@ class FollowViewSet(mixins.CreateModelMixin, mixins.DestroyModelMixin, mixins.Li
         return response.Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        tags=["Social"],
+        summary="List liked journal entries",
+        responses=LikeSerializer(many=True),
+    ),
+    create=extend_schema(
+        tags=["Social"],
+        summary="Like a journal entry",
+        responses=LikeSerializer,
+    ),
+    destroy=extend_schema(
+        tags=["Social"],
+        summary="Remove a like from an entry",
+        responses={204: None},
+    ),
+)
 class LikeViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
     """Create/list likes for the authenticated user."""
 
@@ -106,6 +149,38 @@ class LikeViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.Gener
         return response.Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        tags=["Social"],
+        summary="List comments",
+        responses=CommentSerializer(many=True),
+    ),
+    retrieve=extend_schema(
+        tags=["Social"],
+        summary="Retrieve a comment",
+        responses=CommentSerializer,
+    ),
+    create=extend_schema(
+        tags=["Social"],
+        summary="Create a comment",
+        responses=CommentSerializer,
+    ),
+    update=extend_schema(
+        tags=["Social"],
+        summary="Update a comment",
+        responses=CommentSerializer,
+    ),
+    partial_update=extend_schema(
+        tags=["Social"],
+        summary="Partially update a comment",
+        responses=CommentSerializer,
+    ),
+    destroy=extend_schema(
+        tags=["Social"],
+        summary="Soft delete a comment",
+        responses={204: None},
+    ),
+)
 class CommentViewSet(viewsets.ModelViewSet):
     """Manage comments on journal entries."""
 
@@ -138,6 +213,38 @@ class CommentViewSet(viewsets.ModelViewSet):
         return response.Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        tags=["Social"],
+        summary="List collections",
+        responses=CollectionSerializer(many=True),
+    ),
+    retrieve=extend_schema(
+        tags=["Social"],
+        summary="Retrieve a collection",
+        responses=CollectionSerializer,
+    ),
+    create=extend_schema(
+        tags=["Social"],
+        summary="Create a collection",
+        responses=CollectionSerializer,
+    ),
+    update=extend_schema(
+        tags=["Social"],
+        summary="Update a collection",
+        responses=CollectionSerializer,
+    ),
+    partial_update=extend_schema(
+        tags=["Social"],
+        summary="Partially update a collection",
+        responses=CollectionSerializer,
+    ),
+    destroy=extend_schema(
+        tags=["Social"],
+        summary="Delete a collection",
+        responses={204: None},
+    ),
+)
 class CollectionViewSet(viewsets.ModelViewSet):
     """CRUD for user collections and helper endpoints to manage items."""
 
@@ -163,12 +270,22 @@ class CollectionViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
+    @extend_schema(
+        tags=["Social"],
+        summary="Return or create the default Favorites collection",
+        responses=CollectionSerializer,
+    )
     @action(detail=False, methods=["get"], url_path="favorites")
     def favorites(self, request, *args, **kwargs):
         collection = ensure_default_collection(request.user)
         serializer = self.get_serializer(collection)
         return response.Response(serializer.data)
 
+    @extend_schema(
+        tags=["Social"],
+        summary="Add an entry to the collection",
+        responses=CollectionEntrySerializer,
+    )
     @action(detail=True, methods=["post"], url_path="entries")
     def add_entry(self, request, pk=None, *args, **kwargs):
         collection = self.get_object()
@@ -181,6 +298,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
         return response.Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @extend_schema(
+        tags=["Social"],
         parameters=[
             OpenApiParameter(
                 "entry_pk",
@@ -197,6 +315,11 @@ class CollectionViewSet(viewsets.ModelViewSet):
         CollectionEntry.objects.filter(collection=collection, entry_id=entry_pk).delete()
         return response.Response(status=status.HTTP_204_NO_CONTENT)
 
+    @extend_schema(
+        tags=["Social"],
+        summary="List entries saved in the collection",
+        responses=JournalEntrySummarySerializer(many=True),
+    )
     @action(detail=True, methods=["get"], url_path="entries")
     def list_entries(self, request, pk=None, *args, **kwargs):
         collection = self.get_object()

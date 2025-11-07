@@ -9,7 +9,19 @@ from .models import User
 class UserAdmin(BaseUserAdmin):
     """Expose the custom user model with additional profile fields."""
 
-    fieldsets = BaseUserAdmin.fieldsets
+    fieldsets = BaseUserAdmin.fieldsets + (
+        (
+            _("Profile"),
+            {
+                "fields": (
+                    "uuid",
+                    "display_name",
+                    "avatar",
+                    "profile_visibility",
+                )
+            },
+        ),
+    )
     add_fieldsets = BaseUserAdmin.add_fieldsets + (
         (
             _("Profile"),

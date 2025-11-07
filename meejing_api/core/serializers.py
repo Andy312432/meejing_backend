@@ -1,14 +1,9 @@
 from rest_framework import serializers
 
-from journals.serializers import (
-    JournalEntrySummarySerializer,
-    JournalTagSerializer,
-    LocationSerializer,
-)
+from map.serializers import PlaceSerializer, PostSerializer
 
 
 class SearchResultsSerializer(serializers.Serializer):
-    entries = JournalEntrySummarySerializer(many=True)
-    locations = LocationSerializer(many=True)
-    tags = JournalTagSerializer(many=True)
+    places = PlaceSerializer(many=True)
+    posts = PostSerializer(many=True)
 

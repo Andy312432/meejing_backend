@@ -20,21 +20,6 @@ class UserPublicSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class UserDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = [
-            "id",
-            "uuid",
-            "username",
-            "email",
-            "display_name",
-            "avatar",
-            "profile_visibility",
-        ]
-        read_only_fields = ["id", "uuid", "username", "email"]
-
-
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         write_only=True,
@@ -51,3 +36,22 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
+
+
+class UserDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "uuid",
+            "username",
+            "email",
+            "display_name",
+            "avatar",
+            "profile_visibility",
+        ]
+        read_only_fields = ["id", "uuid", "username", "email"]
+
+
+class UserStatsSerializer(serializers.Serializer):
+    posts = serializers.IntegerField(min_value=0)

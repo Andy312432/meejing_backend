@@ -10,12 +10,9 @@ class UserModelTests(TestCase):
             password="testpass123",
             display_name="Explorer",
             profile_visibility="friends",
-            latitude=25.032969,
-            longitude=121.565414,
         )
 
         self.assertEqual(user.display_name, "Explorer")
         self.assertEqual(user.profile_visibility, "friends")
-        self.assertAlmostEqual(float(user.latitude), 25.032969, places=6)
         self.assertEqual(str(user), "Explorer")
 
