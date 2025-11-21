@@ -7,7 +7,7 @@ from rest_framework import generics, permissions, response
 from core.models import VisibilityChoices
 from map.models import Place, Post
 from map.serializers import PlaceSerializer, PostSerializer
-from .serializers import SearchResultsSerializer
+from .serializers import SearchResultsSerializer, IdResultsSerializer
 
 
 @extend_schema(
@@ -67,4 +67,43 @@ class SearchView(generics.GenericAPIView):
         posts = PostSerializer(post_qs[:20], many=True).data
 
         serializer = self.get_serializer({"places": places, "posts": posts})
+        return response.Response({"results": serializer.data})
+
+@extend_schema(
+    tags=["Misc"],
+    summary="For frontend",
+    parameters=[
+        OpenApiParameter(
+            name="q",
+            required=True,
+            type=str,
+            location=OpenApiParameter.QUERY,
+            description="Search term (latitude and longitude)",
+        )
+    ],
+    responses={200: IdResultsSerializer},
+)  
+class SearchSpecView(generics.GenericAPIView):
+    """search specific place from lat and lng"""
+
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    serializer_class = IdResultsSerializer
+
+    def get(self, request, *args, **kwargs):
+        query = request.query_params.get("q", "").strip()
+
+        user = request.user if request.user.is_authenticated else None
+
+        place_filters = Q(latitude__icontains=query) | Q(longitude__icontains=query)
+        place_qs = Place.objects.filter(place_filters)
+        if not user:
+            place_qs = place_qs.filter(visibility=VisibilityChoices.PUBLIC)
+        else:
+            place_qs = place_qs.filter(
+                Q(visibility=VisibilityChoices.PUBLIC) | Q(created_by=user)
+            )
+
+        places = PlaceSerializer(place_qs[:20], many=True).data
+
+        serializer = self.get_serializer({"places": places})
         return response.Response({"results": serializer.data})
