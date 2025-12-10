@@ -52,5 +52,16 @@ class PostSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "photo",
+            "like_count",
+            "dislike_count",
         ]
-        read_only_fields = ["id", "uuid", "author", "place", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "uuid",
+            "author",
+            "place",
+            "created_at",
+            "updated_at",
+            "like_count",
+            "dislike_count",
+        ]

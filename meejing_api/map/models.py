@@ -61,6 +61,8 @@ class Post(TimeStampedUUIDModel):
         default=VisibilityChoices.PUBLIC,
     )
     photo = models.ImageField(upload_to=post_photo_upload_to, blank=True, null=True)
+    like_count = models.PositiveIntegerField(default=0)
+    dislike_count = models.PositiveIntegerField(default=0)
     
     class Meta:
         indexes = [

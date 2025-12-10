@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.db.models import Q
 from rest_framework import decorators, permissions, response, viewsets
+from rest_framework import status
 
 from core.models import VisibilityChoices
 from .models import Place, Post
@@ -89,4 +90,40 @@ class PostViewSet(viewsets.ModelViewSet):
 
         queryset = self.get_queryset().filter(author__id=user_id)
         serializer = self.get_serializer(queryset, many=True)
+        return response.Response(serializer.data)
+
+    @decorators.action(
+        detail=True,
+        methods=["patch"],
+        url_path="reaction",
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def set_reaction(self, request, pk=None, *args, **kwargs):
+        """
+        Increment like/dislike counters for a post.
+
+        Accepts {"reaction": "like"} or {"reaction": "dislike"} or {"reaction": "clear"}.
+        """
+
+        post = self.get_object()
+        reaction = request.data.get("reaction")
+        if reaction not in {"like", "dislike", "clear"}:
+            return response.Response(
+                {"detail": "reaction must be one of: like, dislike, clear"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        #FIXME: should we track user?
+        if reaction == "like":
+            post.like_count += 1
+        elif reaction == "dislike":
+            post.dislike_count += 1
+        elif reaction == "clear":
+            # best-effort decrement without tracking per-user
+            if post.like_count > 0:
+                post.like_count -= 1
+            if post.dislike_count > 0:
+                post.dislike_count -= 1
+
+        post.save(update_fields=["like_count", "dislike_count", "updated_at"])
+        serializer = self.get_serializer(post)
         return response.Response(serializer.data)
