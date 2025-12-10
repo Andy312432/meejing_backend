@@ -14,6 +14,7 @@ class PlaceViewSet(viewsets.ModelViewSet):
 
     serializer_class = PlaceSerializer
     permission_classes = [IsOwnerOrReadOnly]
+    parser_classes = viewsets.ModelViewSet.parser_classes
 
     def get_queryset(self):
         qs = Place.objects.select_related("created_by")
@@ -67,26 +68,25 @@ class PostViewSet(viewsets.ModelViewSet):
     @decorators.action(
         detail=False,
         methods=["get"],
-        url_path=r"by-place/(?P<place_uuid>[0-9a-f-]+)",
+        url_path=r"by-place/(?P<place_id>[0-9a-f-]+)",
         permission_classes=[permissions.AllowAny],
     )
-    def by_place(self, request, place_uuid=None, *args, **kwargs):
+    def by_place(self, request, place_id=None, *args, **kwargs):
         """Return posts related to a specific place."""
 
-        queryset = self.get_queryset().filter(place__uuid=place_uuid)
+        queryset = self.get_queryset().filter(place__id=place_id)
         serializer = self.get_serializer(queryset, many=True)
         return response.Response(serializer.data)
 
     @decorators.action(
         detail=False,
         methods=["get"],
-        url_path=r"by-user/(?P<user_uuid>[0-9a-f-]+)",
+        url_path=r"by-user/(?P<user_id>[0-9a-f-]+)",
         permission_classes=[permissions.AllowAny],
     )
-    def by_user(self, request, user_uuid=None, *args, **kwargs):
+    def by_user(self, request, user_id=None, *args, **kwargs):
         """Return posts authored by a specific user."""
 
-        queryset = self.get_queryset().filter(author__uuid=user_uuid)
+        queryset = self.get_queryset().filter(author__id=user_id)
         serializer = self.get_serializer(queryset, many=True)
         return response.Response(serializer.data)
-

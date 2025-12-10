@@ -36,6 +36,10 @@ class Place(TimeStampedUUIDModel):
         return f"{self.name} ({self.latitude}, {self.longitude})"
 
 
+def post_photo_upload_to(instance: "Post", filename: str) -> str:
+    return f"places/{instance.place.uuid}/posts/{instance.uuid or 'new'}/{filename}"
+
+
 class Post(TimeStampedUUIDModel):
     """Content authored by users and attached to a place."""
 
@@ -56,7 +60,8 @@ class Post(TimeStampedUUIDModel):
         choices=VisibilityChoices.choices,
         default=VisibilityChoices.PUBLIC,
     )
-
+    photo = models.ImageField(upload_to=post_photo_upload_to, blank=True, null=True)
+    
     class Meta:
         indexes = [
             models.Index(fields=("visibility",)),
@@ -67,4 +72,3 @@ class Post(TimeStampedUUIDModel):
 
     def __str__(self) -> str:
         return f"{self.title} @ {self.place.name}"
-

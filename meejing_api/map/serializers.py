@@ -36,6 +36,7 @@ class PostSerializer(serializers.ModelSerializer):
         source="place",
         write_only=True,
     )
+    photo = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = Post
@@ -50,6 +51,6 @@ class PostSerializer(serializers.ModelSerializer):
             "visibility",
             "created_at",
             "updated_at",
+            "photo",
         ]
         read_only_fields = ["id", "uuid", "author", "place", "created_at", "updated_at"]
-
