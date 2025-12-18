@@ -20,6 +20,7 @@ env = environ.Env(
     SECRET_KEY=(str, "django-insecure-change-me"),
     ALLOWED_HOSTS=(list, [".vercel.app", "127.0.0.1", "localhost"]),
     CORS_ALLOW_ALL_ORIGINS=(bool, True),
+    USE_VERCEL_BLOB=(bool, False),
 )
 environ.Env.read_env(BASE_DIR / ".env")
 
@@ -125,6 +126,16 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# Optional: store uploads on Vercel Blob
+USE_VERCEL_BLOB = env("USE_VERCEL_BLOB")
+VERCEL_BLOB_TOKEN = env("BLOB_READ_WRITE_TOKEN", default=None)
+VERCEL_BLOB_BASE_PATH = env("VERCEL_BLOB_BASE_PATH", default="uploads")
+VERCEL_BLOB_PUBLIC_BASE_URL = env("VERCEL_BLOB_PUBLIC_BASE_URL", default=None)
+VERCEL_BLOB_ADD_RANDOM_SUFFIX = env.bool("VERCEL_BLOB_ADD_RANDOM_SUFFIX", default=True)
+if USE_VERCEL_BLOB:
+    DEFAULT_FILE_STORAGE = "core.storage.VercelBlobStorage"
+    MEDIA_URL = VERCEL_BLOB_PUBLIC_BASE_URL or MEDIA_URL
+
 # REST framework configuration
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -171,7 +182,7 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", default=not DEBUG)
 CSRF_COOKIE_SECURE = env.bool("CSRF_COOKIE_SECURE", default=not DEBUG)
 
-if not DEBUG:
+if USE_VERCEL_BLOB:
     STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
 
 # Default primary key field type

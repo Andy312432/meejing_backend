@@ -5,8 +5,12 @@
       "use": "@vercel/python"
     }
   ],
-  "buildCommand": "pip install -r requirements.txt && python manage.py collectstatic --noinput",
+  "buildCommand": "pip install -r requirements.txt && python manage.py makemigrations --noinput && python manage.py migrate --noinput && python manage.py collectstatic --noinput --clear",
   "routes": [
+    {
+      "src": "/static/(.*)",
+      "dest": "/static/$1"
+    },
     {
       "src": "/(.*)",
       "dest": "/meejing_api/wsgi.py"
