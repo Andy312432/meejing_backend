@@ -13,8 +13,8 @@ def root_view(request):
     <ul>
         <li><a href="admin/">admin/</li>
         <li><a href="api/docs/">api docs</a></li>
+        <li><a href="api/docs/redoc/">api docs(redoc)</a></li>
         <li><a href="api/schema/">api schema/</a></li>
-        <li><a href="api/">api/</a></li>
     </ul>
     </body></html>
     """
