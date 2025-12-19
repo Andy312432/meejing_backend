@@ -1,5 +1,4 @@
 # 覓境 API Backend
-## **Warning: Under development!! Some apis are untested!!**
 
 Backend implementation for **覓境｜Map-based 日誌社群平台**, built with Django 5 + Django REST Framework.  
 It delivers the MVP feature set for personal journals, social discovery, and geo-based exploration with a SwiftUI-friendly REST API surface.
@@ -21,7 +20,10 @@ It delivers the MVP feature set for personal journals, social discovery, and geo
 
 ## Getting Started
 
+Fill in the .env first.
+
 ```bash
+cd meejing_api
 python -m venv .venv
 .venv\Scripts\activate  # Windows PowerShell
 pip install -r requirements.txt
@@ -41,25 +43,8 @@ python manage.py runserver
 
 ## API Overview
 
-Base path: `/api/`
-
-### Auth & Profiles (`/api/auth/…`)
-- `POST /register/` – create account  
-- `POST /token/`, `/token/refresh/`, `/token/verify/` – JWT flow  
-- `GET/PATCH /me/` – authenticated profile detail/update  
-- `GET /users/` – public directory with search & filters  
-- `GET /users/{id}/stats/` – quick metrics per user
-
-### Map (`/api/map/…`)
-- `places/` – CRUD for places; `GET /places/public/` lists all public locations  
-- `places/{id}/` – edit or delete a place (owner only)  
-- `posts/` – CRUD for posts tied to places (`place_id` payload key)  
-  - `GET /posts/by-place/<place_uuid>/` – posts for a place  
-  - `GET /posts/by-user/<user_uuid>/` – posts written by a user  
-  - `DELETE /posts/{id}/` – remove a post (author only)
-
-### Global Search
-- `GET /api/search/?q=espresso` – returns places and posts matching the query (≥2 chars) with visibility filtering
+- Base path: `/api/`
+- See `/api/docs` For more information.
 
 ## Data Model Highlights
 
@@ -76,26 +61,9 @@ Base path: `/api/`
 - Map API workflows (places/posts CRUD, restricted actions, public listings)  
 - Search endpoint coverage
 
-## Deploying to Vercel
 
-1. **Install the Vercel CLI** (optional for local previews): `npm i -g vercel`.
-2. **Set required environment variables** in the Vercel dashboard (`Project Settings → Environment Variables`):
-   - `DEBUG=False`
-   - `SECRET_KEY=<strong-random-string>`
-   - `ALLOWED_HOSTS=.vercel.app,<your-custom-domain>`
-   - `DATABASE_URL=<external-postgres-connection-string>`
-   - `CORS_ALLOWED_ORIGINS=https://<your-frontend-domain>`
-   - `CSRF_TRUSTED_ORIGINS=https://<your-frontend-domain>,https://*.vercel.app`
-3. **Provision a managed database** (e.g. Neon) and point `DATABASE_URL` at it—Vercel's storage is ephemeral.
-4. (Optional) **Configure media storage** (S3, Cloudflare R2, etc.) and update `MEDIA_URL`/`MEDIA_ROOT` or storage backends accordingly.
-5. Deploy with `vercel --prod` or through the Vercel dashboard. The build command runs `collectstatic` so hashed assets are served from `/staticfiles`.
-6. After the first deploy, run migrations via `vercel ssh` or a CI step: `python manage.py migrate`.
+## Next Steps (Roadmap Ideas powered by chatGPT)
 
-> Note: The `routes` section in `vercel.json` serves collected static assets. User-uploaded media should live on external storage in production.
-
-## Next Steps (Roadmap Ideas)
-
-- File storage integration for images/video/audio uploads (S3, Cloudflare R2, etc.).  
 - Push notifications & async tasks for activity updates.  
 - Recommendation engine for “Random Explore” and personalized feeds.  
 - Enhanced analytics (footprint statistics, travel streaks) and achievement system.  
