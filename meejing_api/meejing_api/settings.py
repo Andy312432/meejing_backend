@@ -21,6 +21,7 @@ env = environ.Env(
     ALLOWED_HOSTS=(list, [".vercel.app", "127.0.0.1", "localhost"]),
     CORS_ALLOW_ALL_ORIGINS=(bool, True),
     USE_VERCEL_BLOB=(bool, False),
+    BLOB_READ_WRITE_TOKEN=(str, ""),
 )
 environ.Env.read_env(BASE_DIR / ".env")
 
@@ -126,15 +127,22 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# Optional: store uploads on Vercel Blob
+# Vercel Blob Storage configuration
 USE_VERCEL_BLOB = env("USE_VERCEL_BLOB")
 VERCEL_BLOB_TOKEN = env("BLOB_READ_WRITE_TOKEN", default=None)
 VERCEL_BLOB_BASE_PATH = env("VERCEL_BLOB_BASE_PATH", default="uploads")
 VERCEL_BLOB_PUBLIC_BASE_URL = env("VERCEL_BLOB_PUBLIC_BASE_URL", default=None)
 VERCEL_BLOB_ADD_RANDOM_SUFFIX = env.bool("VERCEL_BLOB_ADD_RANDOM_SUFFIX", default=True)
 if USE_VERCEL_BLOB:
-    DEFAULT_FILE_STORAGE = "core.storage.VercelBlobStorage"
     MEDIA_URL = VERCEL_BLOB_PUBLIC_BASE_URL or MEDIA_URL
+    STORAGES = {
+        "default": {
+            "BACKEND": "core.storage.VercelBlobStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
 
 # REST framework configuration
 REST_FRAMEWORK = {

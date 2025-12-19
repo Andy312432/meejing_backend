@@ -60,7 +60,12 @@ class Post(TimeStampedUUIDModel):
         choices=VisibilityChoices.choices,
         default=VisibilityChoices.PUBLIC,
     )
-    photo = models.ImageField(upload_to=post_photo_upload_to, blank=True, null=True)
+    photo = models.ImageField(
+        upload_to=post_photo_upload_to,
+        blank=True,
+        null=True,
+        max_length=500,
+    )
     like_count = models.PositiveIntegerField(default=0)
     dislike_count = models.PositiveIntegerField(default=0)
     
