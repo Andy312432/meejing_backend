@@ -53,7 +53,7 @@ class MapApiTests(APITestCase):
         self.assertEqual(response.data[0]["name"], "Central Park")
 
     def test_posts_by_place(self):
-        url = reverse("core:map:post-by-place", kwargs={"place_uuid": str(self.place.uuid)})
+        url = reverse("core:map:post-by-place", kwargs={"place_id": self.place.id})
         self.client.force_authenticate(self.owner)
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -72,7 +72,7 @@ class MapApiTests(APITestCase):
         self.assertEqual(self.place.name, "Updated")
 
     def test_posts_by_user(self):
-        url = reverse("core:map:post-by-user", kwargs={"user_uuid": str(self.owner.uuid)})
+        url = reverse("core:map:post-by-user", kwargs={"user_id": self.owner.id})
         self.client.force_authenticate(self.owner)
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -88,3 +88,44 @@ class MapApiTests(APITestCase):
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(Post.objects.filter(pk=self.post.pk).exists())
+'''
+    def test_batch_delete(self):
+        post2 = Post.objects.create(
+            place=self.place,
+            author=self.owner,
+            title="Another",
+            body="More beans",
+        )
+        post3 = Post.objects.create(
+            place=self.place,
+            author=self.viewer,
+            title="Viewer post",
+            body="viewer content",
+        )
+        url = reverse("core:map:post-batch-delete")
+
+        # non-owner cannot delete other's post
+        self.client.force_authenticate(self.viewer)
+        res = self.client.post(url, {"ids": [self.post.id]}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["deleted"], 0)
+        self.assertTrue(Post.objects.filter(id=self.post.id).exists())
+
+        # owner deletes own posts
+        self.client.force_authenticate(self.owner)
+        res = self.client.post(url, {"ids": [self.post.id, post2.id]}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["deleted"], 2)
+        self.assertFalse(Post.objects.filter(id=self.post.id).exists())
+        self.assertFalse(Post.objects.filter(id=post2.id).exists())
+
+        # superuser can delete all
+        admin = User.objects.create_superuser(
+            username="admin", email="admin@example.com", password="pass1234"
+        )
+        self.client.force_authenticate(admin)
+        res = self.client.post(url, {"ids": [post3.id]}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["deleted"], 1)
+        self.assertFalse(Post.objects.filter(id=post3.id).exists())
+'''

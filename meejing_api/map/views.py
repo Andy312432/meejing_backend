@@ -127,3 +127,33 @@ class PostViewSet(viewsets.ModelViewSet):
         post.save(update_fields=["like_count", "dislike_count", "updated_at"])
         serializer = self.get_serializer(post)
         return response.Response(serializer.data)
+'''
+    @decorators.action(
+        detail=False,
+        methods=["post"],
+        url_path="batch-delete",
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def batch_delete(self, request, *args, **kwargs):
+        """
+        Delete multiple posts in one request.
+
+        Expects JSON body: {"ids": [1, 2, 3]}
+        Superusers may delete any post; regular users may delete only their own.
+        """
+
+        ids = request.data.get("ids")
+        if not isinstance(ids, list) or not ids:
+            return response.Response(
+                {"detail": "Provide a non-empty list of ids"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        qs = Post.objects.filter(id__in=ids)
+        user = request.user
+        if not user.is_superuser:
+            qs = qs.filter(author=user)
+
+        deleted_count, _ = qs.delete()
+        return response.Response({"deleted": deleted_count})
+'''
