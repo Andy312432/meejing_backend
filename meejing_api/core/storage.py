@@ -48,9 +48,11 @@ class VercelBlobStorage(Storage):
     def _save(self, name: str, content: File):
         """Upload the file and return the blob URL as the stored name."""
 
-        path = self._build_blob_path(name)
         data = content.read()
-        data = self.compress(name, data)
+        data, converted_to_jpeg = self.compress(name, data)
+        if converted_to_jpeg and name.lower().endswith(".mpo"):
+            name = str(PurePosixPath(name).with_suffix(".jpg"))
+        path = self._build_blob_path(name)
         options = self._build_options()
 
         result = vercel_blob.put(path, data, options=options)
@@ -89,27 +91,36 @@ class VercelBlobStorage(Storage):
         return name
 
     # Helpers
-    def compress(self, name: str, data: bytes) -> bytes:
-        """Compress image"""
+    def compress(self, name: str, data: bytes) -> tuple[bytes, bool]:
+        """Compress image and normalize MPO """
 
         if not data:
-            return data
+            return data, False
         if not getattr(settings, "VERCEL_BLOB_COMPRESS_IMAGES", False):
             logger.warning("Image compression failed config")
-            return data
+            return data, False
 
         try:
             from PIL import Image, ImageOps, UnidentifiedImageError
         except Exception:
             logger.warning("Image compression failed import")
-            return data
+            return data, False
 
         try:
             with Image.open(io.BytesIO(data)) as image:
                 image_format = (image.format or "").upper()
-                if image_format not in {"JPEG", "JPG", "PNG", "WEBP"}:
-                    return data
-
+                name_lower = (name or "").lower()
+                is_mpo = image_format == "MPO" or name_lower.endswith(".mpo")
+                output_format = "JPEG" if is_mpo else image_format
+                if output_format not in {"JPEG", "JPG", "PNG", "WEBP"}:
+                    logger.debug("type", image_format)
+                    return data, False
+                if is_mpo:
+                    try:
+                        image.seek(0)
+                    except EOFError:
+                        logger.warning("Failed to seek to first frame in MPO")
+                        pass
                 image = ImageOps.exif_transpose(image)
                 max_w = int(getattr(settings, "VERCEL_BLOB_MAX_WIDTH", 1920))
                 max_h = int(getattr(settings, "VERCEL_BLOB_MAX_HEIGHT", 1080))
@@ -120,8 +131,7 @@ class VercelBlobStorage(Storage):
                     image.thumbnail((max_w, max_h), resample)
                 output = io.BytesIO()
                 save_kwargs = {"optimize": True}
-
-                if image_format in {"JPEG", "JPG"}:
+                if output_format in {"JPEG", "JPG"}:
                     quality = int(getattr(settings, "VERCEL_BLOB_IMAGE_QUALITY", 70))
                     quality = max(10, min(95, quality))
                     subsampling = int(getattr(settings, "VERCEL_BLOB_JPEG_SUBSAMPLING", 2))
@@ -135,29 +145,27 @@ class VercelBlobStorage(Storage):
                             "subsampling": subsampling,
                         }
                     )
-                elif image_format == "PNG":
+                elif output_format == "PNG":
                     level = int(getattr(settings, "VERCEL_BLOB_PNG_COMPRESS_LEVEL", 9))
                     level = max(0, min(9, level))
                     save_kwargs.update({"compress_level": level})
-                elif image_format == "WEBP":
+                elif output_format == "WEBP":
                     quality = int(getattr(settings, "VERCEL_BLOB_IMAGE_QUALITY", 70))
                     quality = max(10, min(95, quality))
                     method = int(getattr(settings, "VERCEL_BLOB_WEBP_METHOD", 6))
                     method = max(0, min(6, method))
                     save_kwargs.update({"quality": quality, "method": method})
-
-                image.save(output, format=image_format, **save_kwargs)
+                image.save(output, format=output_format, **save_kwargs)
                 compressed = output.getvalue()
-                if compressed and len(compressed) < len(data):
+                if compressed and (is_mpo or len(compressed) < len(data)):
                     logger.debug("Compressed image %s from %d to %d bytes", name, len(data), len(compressed))
-                    return compressed
-        except UnidentifiedImageError:
-            
+                    return compressed, is_mpo
+        except UnidentifiedImageError as exc:
             logger.warning("Image compression failed")
-            return data
+            return data, False
         except Exception as exc:  # noqa: BLE001
             logger.warning("Image compression failed for %s: %s", name, exc)
-        return data
+        return data, False
 
     def _build_blob_path(self, name: str) -> str:
         safe = str(PurePosixPath(name).as_posix()).lstrip("/")
