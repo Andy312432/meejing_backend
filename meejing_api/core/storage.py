@@ -95,11 +95,13 @@ class VercelBlobStorage(Storage):
         if not data:
             return data
         if not getattr(settings, "VERCEL_BLOB_COMPRESS_IMAGES", False):
+            logger.warning("Image compression failed config")
             return data
 
         try:
             from PIL import Image, ImageOps, UnidentifiedImageError
         except Exception:
+            logger.warning("Image compression failed import")
             return data
 
         try:
@@ -150,6 +152,8 @@ class VercelBlobStorage(Storage):
                     logger.debug("Compressed image %s from %d to %d bytes", name, len(data), len(compressed))
                     return compressed
         except UnidentifiedImageError:
+            
+            logger.warning("Image compression failed")
             return data
         except Exception as exc:  # noqa: BLE001
             logger.warning("Image compression failed for %s: %s", name, exc)
